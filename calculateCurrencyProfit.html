@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Convert JSON Data to HTML Table</title>
+    <style>
+        th, td, p, input {
+            font:14px Verdana;
+        }
+        table, th, td 
+        {
+            border: solid 1px #DDD;
+            border-collapse: collapse;
+            padding: 2px 3px;
+            text-align: center;
+        }
+        th {
+            font-weight:bold;
+        }
+    </style>
+</head>
+<body>
+    <input type="button" onclick="CreateDataTableFromJSON()" value="Show Currency Profits" />
+    <p id="showData"></p>
+</body>
+
+<script>
+function getData(){
+  var myData = [{
+        "currency": "BTC",
+        "date": "20180507",
+        "quotes":
+        [{
+                "time": "0915",
+                "price": "34.98"
+            }, {
+                "time": "1045",
+                "price": "36.13"
+            }, {
+                "time": "1230",
+                "price": "37.01"
+            }, {
+                "time": "1400",
+                "price": "35.98"
+            }, {
+                "time": "1530",
+                "price": "33.56"
+            }
+        ]
+    }, {
+        "currency": "ETC",
+        "date": "20180507",
+        "quotes":
+        [{
+                "time": "0900",
+                "price": "1.45"
+            }, {
+                "time": "1030",
+                "price": "1.87"
+            }, {
+                "time": "1245",
+                "price": "1.55"
+            }, {
+                "time": "1515",
+                "price": "2.01"
+            }, {
+                "time": "1700",
+                "price": "2.15"
+            }
+        ]
+    }, {
+        "currency": "LTC",
+        "date": "20180507",
+        "quotes":
+        [{
+                "time": "0930",
+                "price": "14.32"
+            }, {
+                "time": "1115",
+                "price": "14.87"
+            }, {
+                "time": "1245",
+                "price": "15.03"
+            }, {
+                "time": "1400",
+                "price": "14.76"
+            }, {
+                "time": "1700",
+                "price": "14.15"
+            }
+        ]
+    }
+]
+
+var minTime;
+var minPrice;
+var maxTime;
+var maxPrice;
+var resultObjectsArr = [];
+var resultObject;
+var myString = JSON.stringify(myData);
+var myObjects = JSON.parse(myString);
+myObjects.forEach(function (key, index) {
+    var myQuotes = JSON.stringify(key.quotes);
+    var myObjectQuotes = JSON.parse(myQuotes);
+
+    myObjectQuotes.sort(function (a, b) {
+        return a.price - b.price
+    });
+    var last_element_price = myObjectQuotes[myObjectQuotes.length - 1];
+    maxTime = last_element_price.time;
+    maxPrice = last_element_price.price;
+    var added = false;
+    var maxCalcTime = convertDate(key.date, maxTime);
+    myObjectQuotes.forEach(function (maxKeyQuote, maxIndexQuote) {
+        if (maxCalcTime > convertDate(key.date, maxKeyQuote.time) && !added) {
+            minTime = maxKeyQuote.time;
+            minPrice = maxKeyQuote.price;
+            added = true;
+        }
+    })
+	function formatMoney(amount)
+	{
+			return "$" + amount.toFixed(2);
+	}
+	var minP = 0;
+	minP = formatMoney(parseInt(minPrice));
+
+    resultObject = {};
+    resultObject.date = String(key.date);
+    resultObject.Currency = key.currency;
+    resultObject.TimeBuy = formatTime(convertDate(resultObject.date,minTime));
+    resultObject.PriceBuy = minPrice;
+    resultObject.TimeSell = formatTime(convertDate(resultObject.date,maxTime));
+    resultObject.PriceSell = maxPrice;
+	resultObject.Profit = formatMoney(maxPrice - minPrice);
+    resultObjectsArr.push(resultObject);
+
+})
+return resultObjectsArr;
+}
+function convertDate(str1, str2) {
+    var year = str1.substring(0, 4);
+    var month = str1.substring(4, 6);
+    var day = str1.substring(6, 8);
+    var hour = str2.substring(0, 2);
+    var minute = str2.substring(2, 4);
+
+    var date = new Date(year, month - 1, day, hour, minute);
+	
+    return date;
+}
+
+function formatTime(date) {
+    var hours = date.getHours();
+    var minutes = date.getMinutes();
+    var ampm = hours >= 12 ? 'pm' : 'am';
+    hours = hours % 12;
+    hours = hours ? hours : 12; 
+    minutes = minutes < 10 ? '0' + minutes : minutes;
+    var strTime = hours + ':' + minutes + ' ' + ampm;
+    return strTime;
+}
+
+    function CreateDataTableFromJSON() {
+	var resultObjectsArr = getData();
+ 
+        // Set HTML HEADER. 
+        var col = [];
+        for (var i = 0; i < resultObjectsArr.length; i++) {
+            for (var key in resultObjectsArr[i]) {
+                if (col.indexOf(key) === -1) {
+                    col.push(key);
+                }
+            }
+        }
+
+        // Create Dynamic table
+        var table = document.createElement("table");
+
+        // Create HTML Header
+
+        var tr = table.insertRow(-1);                   // TABLE ROW.
+
+        for (var i = 0; i < col.length; i++) {
+            var th = document.createElement("th");      // TABLE HEADER.
+            th.innerHTML = col[i];
+            tr.appendChild(th);
+        }
+
+        // Add JSON Data as rows
+        for (var i = 0; i < resultObjectsArr.length; i++) {
+
+            tr = table.insertRow(-1);
+
+            for (var j = 0; j < col.length; j++) {
+                var tabCell = tr.insertCell(-1);
+                tabCell.innerHTML = resultObjectsArr[i][col[j]];
+            }
+        }
+
+        // Add the new Table with JSON data to a container
+        var divContainer = document.getElementById("showData");
+        divContainer.innerHTML = "";
+        divContainer.appendChild(table);
+    }
+</script>
+</html>
